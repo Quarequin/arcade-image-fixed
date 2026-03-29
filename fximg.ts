@@ -37,18 +37,6 @@ namespace fximges {
 
 }
 
-interface Fximg extends Buffer {
-    //readonly width: number;
-    
-    //readonly height: number;
-
-    //readonly length: number;
-}
-
-namespace Fximg {
-
-}
-
 //% blockNamespace="fximges"
 namespace fximg {
 
