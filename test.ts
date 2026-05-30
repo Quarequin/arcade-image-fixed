@@ -36,7 +36,7 @@ if (1) {
 
 game.onUpdate(() => {
     //control.runInParallel(() => {
-        let j = 2//randint(1, 4);
+        let j = 8//randint(1, 4);
         for (let i = 0; i < j; i++) {
             if (0) fximg.fillPolygon4(imgfxb,
                 randint(0, w - 1), randint(10, h - 1),
@@ -45,13 +45,13 @@ game.onUpdate(() => {
                 randint(0, w - 1), randint(10, h - 1),
                 randint(0x0, 0xf)
             );
-            if (1) fximg.drawTransDistortedImage(imgfxb, imgfxa,
+            if (0) fximg.drawTransDistortedImage(imgfxb, imgfxa,
                 randint(0, w - 1), randint(10, h - 1),
                 randint(0, w - 1), randint(10, h - 1),
                 randint(0, w - 1), randint(10, h - 1),
                 randint(0, w - 1), randint(10, h - 1),
             );
-            if (0) fximg.fillTriangle(imgfxb,
+            if (1) fximg.fillTriangle(imgfxb,
                 randint(0, w - 1), randint(10, h - 1),
                 randint(0, w - 1), randint(10, h - 1),
                 randint(0, w - 1), randint(10, h - 1),

@@ -59,8 +59,8 @@ namespace helpers {
         let nw = 0;
         for (const pic of pics) {
             const _buf = pins.createBuffer(pic.height)
-            const sx = (allSize.width === pic.width ? 0 : (allSize.width - pic.width) >>> 1),
-                sy = (allSize.height === pic.height ? 0 : (allSize.height - pic.height) >>> 1);
+            const sx = (allSize.width === pic.width ? 0 : Math.idiv(allSize.width - pic.width, 0x02)),
+                sy = (allSize.height === pic.height ? 0 : Math.idiv(allSize.height - pic.height, 0x02));
             for (let x = 0; x < pic.width; x++) {
                 pic.getRows(x, _buf);
                 buf.write(sy, _buf);
@@ -79,7 +79,7 @@ namespace helpers {
         const h = pic.height;
         const buf = pins.createBuffer(h);
         const startIdx = fximgStartIndex(fxpics);
-        for (let nw = 0; (((1 + (nw * pic.height)) >> 1) + startIdx) < fxpics.length; nw += pic.width) {
+        for (let nw = 0; (Math.idiv((1 + (nw * pic.height)), 0x02) + startIdx) < fxpics.length; nw += pic.width) {
             for (let x = 0; x < pic.width; x++) {
                 fximgGetRows(fxpics, nw + x, buf, h);
                 pic.setRows(x, buf);
@@ -93,10 +93,10 @@ namespace helpers {
         const w = fximgWidthOf(fxpics);
         const h = fximgHeightOf(fxpics);
         const fxpic = fximgCreate(w, h);
-        const idxw = idx * w;
+        idx = Math.imul(idx, w);
         const tbuf = pins.createBuffer(h);
         for (let x = 0; x < w; x++) {
-            fximgGetRows(fxpics, x + idxw, tbuf, h);
+            fximgGetRows(fxpics, x + idx, tbuf, h);
             fximgSetRows(fxpic, x, tbuf, h);
         }
         return (fxpic as any as Buffer).slice() as any as Fximg;
@@ -106,44 +106,44 @@ namespace helpers {
         if (fximgRoCheck(fxpics)) return;
         const fw = fximgWidthOf(fxpics), fh = fximgHeightOf(fxpics);
         const vw = fximgWidthOf(fxpic), vh = fximgHeightOf(fxpic);
-        const idxw = idx * fw;
+        idx = Math.imul(idx, fw);
         const buf = pins.createBuffer(fh);
         const _buf = pins.createBuffer(vh)
-        const sx = (fw === vw ? 0 : (fw - vw) >>> 1),
-            sy = (fh === vh ? 0 : (fh - vh) >>> 1);
+        const sx = (fw === vw ? 0 : Math.idiv(fw - vw, 0x02)),
+            sy = (fh === vh ? 0 : Math.idiv(fh - vh, 0x02));
         for (let x = 0; x < vw; x++) {
             fximgGetRows(fxpic, x, _buf, vh);
             buf.write(sy, _buf);
-            fximgSetRows(fxpics, idxw + x + sx, buf, fh)
+            fximgSetRows(fxpics, idx + x + sx, buf, fh)
         }
     }
 
     export function fximgSetPixel(fxpic: Fximg, x: number, y: number, color: number, idx?: number) {
         if (fximgRoCheck(fxpic)) return;
         if (fximgIsOutOfArea(x, y, fximgWidthOf(fxpic), fximgHeightOf(fxpic))) return;
-        idx = idx || 0; idx *= fximgWidthOf(fxpic)
-        color &= 0xf;
+        idx = idx || 0; idx = Math.imul(idx, fximgWidthOf(fxpic));
+        color &= 0x0f;
         x |= 0; y |= 0;
         const i = fximgPos2idx(x + idx, fximgHeightOf(fxpic), y);
-        const ih4 = (i >>> 1) + fximgStartIndex(fxpic);
+        const ih4 = Math.idiv(i, 0x02) + fximgStartIndex(fxpic);
         const curv = (fxpic as any as Buffer)[ih4]
-        let nib0 = curv & 0xf,
-            nib1 = curv >>> 4;
+        let nib0 = curv & 0x0f,
+            nib1 = Math.idiv(curv, 0x10);
         if (i & 1 ? nib0 === color : nib1 === color) return;
         if (i & 1) nib0 = color;
         else nib1 = color;
-        (fxpic as any as Buffer)[ih4] = (nib1 << 4) + nib0;
+        (fxpic as any as Buffer)[ih4] = Math.imul(nib1, 0x10) + nib0;
     }
 
     export function fximgGetPixel(fxpic: Fximg, x: number, y: number, idx?: number) {
         if (fximgIsOutOfArea(x, y, fximgWidthOf(fxpic), fximgHeightOf(fxpic))) return 0;
-        idx = idx || 0; idx *= fximgWidthOf(fxpic);
+        idx = idx || 0; idx = Math.imul(idx, fximgWidthOf(fxpic));
         x |= 0; y |= 0;
         const i = fximgPos2idx(x + idx, fximgHeightOf(fxpic), y);
-        const ih = i >>> 1;
+        const ih = Math.idiv(i, 0x02);
         const ih4 = ih + fximgStartIndex(fxpic);
         const curv = (fxpic as any as Buffer)[ih4];
-        return (i & 1 ? curv & 0xf : curv >>> 4)
+        return (i & 1 ? curv & 0xf : Math.idiv(curv, 0x10))
     }
 
     export function fximgSetRows(fxpic: Fximg, x: number, src: Buffer, h?: number) {
@@ -153,21 +153,21 @@ namespace helpers {
         else h = Math.max(h, fh);
         x |= 0; h |= 0;
         const len = Math.min(src.length, h);
-        if (len <= 0 || fximgIsOutOfRange(x, fximgWidthOf(fxpic) * fximgLengthOf(fxpic))) return;
+        if (len <= 0 || fximgIsOutOfRange(x, Math.imul(fximgWidthOf(fxpic), fximgLengthOf(fxpic)))) return;
     
         const start = fximgStartIndex(fxpic);
-        const colStartBit = (x * h) & 1;   // 0 = even (aligned), 1 = odd (misaligned)
+        const colStartBit = Math.imul(x, h) & 1;   // 0 = even (aligned), 1 = odd (misaligned)
     
         let srcIdx = 0;
-        let dstByteIdx = start + ((x * h) >>> 1);
+        let dstByteIdx = start + Math.idiv((x * h), 0x02);
         if (colStartBit === 0) {
             // Fast path: aligned → copy byte-wise ได้เลย
             // src[0] ไป nybble สูงของ byte แรก, src[1] ไป nybble ต่ำ, ฯลฯ
             for (;srcIdx < len - 1; srcIdx += 2, dstByteIdx++)
-                (fxpic as any as Buffer)[dstByteIdx] = (src[srcIdx] << 0x4) + (src[srcIdx + 1] & 0x0f);
+                (fxpic as any as Buffer)[dstByteIdx] = Math.imul(src[srcIdx], 0x10) + (src[srcIdx + 1] & 0x0f);
             // เหลือพิกเซลสุดท้าย (ถ้า len เป็น odd)
             if (srcIdx < len)
-                (fxpic as any as Buffer)[dstByteIdx] = (src[srcIdx] << 0x4) + ((fxpic as any as Buffer)[dstByteIdx] & 0x0f);
+                (fxpic as any as Buffer)[dstByteIdx] = Math.imul(src[srcIdx], 0x10) + ((fxpic as any as Buffer)[dstByteIdx] & 0x0f);
             return;
         }
         // Misaligned path: เริ่มจาก nybble ต่ำของ byte แรก
@@ -177,10 +177,10 @@ namespace helpers {
             srcIdx++, dstByteIdx++;
         // จากนั้น copy แบบ aligned เหมือน fast path
         for (;srcIdx < len - 1; srcIdx += 2, dstByteIdx++)
-            (fxpic as any as Buffer)[dstByteIdx] = (src[srcIdx] << 4) + (src[srcIdx + 1] & 0x0f);
+            (fxpic as any as Buffer)[dstByteIdx] = Math.imul(src[srcIdx], 0x10) + (src[srcIdx + 1] & 0x0f);
         // เหลือตัวสุดท้าย (ถ้ามี)
         if (srcIdx < len)
-            (fxpic as any as Buffer)[dstByteIdx] = (src[srcIdx] << 4) + ((fxpic as any as Buffer)[dstByteIdx] & 0x0f);
+            (fxpic as any as Buffer)[dstByteIdx] = Math.imul(src[srcIdx], 0x10) + ((fxpic as any as Buffer)[dstByteIdx] & 0x0f);
     }
 
     export function fximgGetRows(fxpic: Fximg, x: number, dst: Buffer, h?: number) {
@@ -192,9 +192,9 @@ namespace helpers {
         if (len <= 0 || fximgIsOutOfRange(x, fximgWidthOf(fxpic) * fximgLengthOf(fxpic))) return;
 
         const start = fximgStartIndex(fxpic);
-        const colStartBit = (x * h) & 1;
+        const colStartBit = Math.imul(x, h) & 1;
         let dstIdx = 0;
-        let srcByteIdx = start + ((x * h) >>> 1);
+        let srcByteIdx = start + Math.idiv((x * h), 0x02);
 
         let tmpByte = 0x00;
 
@@ -202,10 +202,10 @@ namespace helpers {
             // Aligned: byte-wise extract
             for (;dstIdx < len - 1; dstIdx += 2, srcByteIdx++)
                 tmpByte = (fxpic as any as Buffer)[srcByteIdx],
-                dst[dstIdx] = tmpByte >>> 4,
+                dst[dstIdx] = Math.idiv(tmpByte, 0x10),
                 dst[dstIdx + 1] = tmpByte & 0x0f;
             if (dstIdx < len)
-                dst[dstIdx] = (fxpic as any as Buffer)[srcByteIdx] >>> 4;
+                dst[dstIdx] = Math.idiv((fxpic as any as Buffer)[srcByteIdx], 0x10);
             return;
         }
         // Misaligned
@@ -214,10 +214,10 @@ namespace helpers {
             dstIdx++, srcByteIdx++;
         for (;dstIdx < len - 1; dstIdx += 2, srcByteIdx++)
             tmpByte = (fxpic as any as Buffer)[srcByteIdx],
-            dst[dstIdx] = tmpByte >>> 4,
+            dst[dstIdx] = Math.idiv(tmpByte, 0x10),
             dst[dstIdx + 1] = tmpByte & 0x0f;
         if (dstIdx < len)
-            dst[dstIdx] = (fxpic as any as Buffer)[srcByteIdx] >>> 4;
+            dst[dstIdx] = Math.idiv((fxpic as any as Buffer)[srcByteIdx], 0x10);
     }
 
     // 4. fill (เติมทั้งภาพ)
@@ -225,15 +225,13 @@ namespace helpers {
         if (fximgRoCheck(fxpic)) return;
         idx = idx || 0;
         if (fximgIsOutOfRange(idx, fximgLengthOf(fxpic))) return;
-            control.runInParallel(() => {
             color &= 0xF;
             const h = fximgHeightOf(fxpic);
             const rowBuf = pins.createBuffer(h);
             rowBuf.fill(color);
             const w = fximgWidthOf(fxpic);
-            idx *= w;
+            idx = Math.imul(idx, w);
             for (let x = 0; x < w; x++) fximgSetRows(fxpic, idx + x, rowBuf, h);
-        })
     }
 
     // 5. replace (แทนที่สี)
@@ -242,7 +240,6 @@ namespace helpers {
         from &= 0xF; to &= 0xF;
         idx = idx || 0;
         if (fximgIsOutOfRange(idx, fximgLengthOf(fxpic))) return;
-            control.runInParallel(() => {
             const w = fximgWidthOf(fxpic);
             idx *= w;
             const h = fximgHeightOf(fxpic);
@@ -252,7 +249,6 @@ namespace helpers {
                 for (let y = 0; y < h; y++) if (rowBuf[y] === from) rowBuf[y] = to, rowChange = true;
                 if (rowChange) fximgSetRows(fxpic, idx + x, rowBuf, h);
             }
-        })
     }
 
     export function fximgEqualTo(fxpic: Fximg, otherfxpic: Fximg) {

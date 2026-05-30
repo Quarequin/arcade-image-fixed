@@ -61,7 +61,7 @@ namespace helpers {
 
         // copy เข้าไปที่ offset yDst
         for (let y = 0; y < hSrc; y++) {
-            const sy_f = + y * scaleY;
+            const sy_f = y * scaleY;
             const sy = (sy_f + 0.5) | 0;
 
             if (sy < 0) continue;
@@ -90,18 +90,18 @@ namespace helpers {
         if (wDst < 1 || hDst < 1) return false;
         if (wSrc < 1 || hSrc < 1) return false;
 
-        const dstW = fximgWidthOf(dst);
-        const dstH = fximgHeightOf(dst);
+        let dstW = fximgWidthOf(dst);
+        let dstH = fximgHeightOf(dst);
         //if ((xDst + wDst < 0 || xDst >= dstW) ||
         //    (yDst + hDst < 0 || yDst >= dstH)) return false;
-        const srcW = fximgWidthOf(src);
-        const srcH = fximgHeightOf(src);
+        let srcW = fximgWidthOf(src);
+        let srcH = fximgHeightOf(src);
         //if ((xSrc + wSrc < 0 || xSrc >= srcW) ||
         //    (ySrc + hSrc < 0 || ySrc >= srcH)) return false;
 
         // คำนวณ scale factor (จริง ๆ คือ ratio)
-        const scaleX = wSrc / wDst;
-        const scaleY = hSrc / hDst;
+        let scaleX = wSrc / wDst;
+        let scaleY = hSrc / hDst;
 
         // Clip rectangle ทั้ง src และ dst (เหมือนมาตรฐาน)
         let clipWDst = wDst;
